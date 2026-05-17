@@ -250,17 +250,20 @@ video.addEventListener("loadedmetadata", function () {
 // ── Drag and drop ──
 
 stage.addEventListener("dragover", function (e) {
+  if (currentMode !== "scrubber") return;
   e.preventDefault();
   stage.classList.add("drag-over");
 });
 
 stage.addEventListener("dragleave", function (e) {
+  if (currentMode !== "scrubber") return;
   if (!stage.contains(e.relatedTarget)) {
     stage.classList.remove("drag-over");
   }
 });
 
 stage.addEventListener("drop", function (e) {
+  if (currentMode !== "scrubber") return;
   e.preventDefault();
   stage.classList.remove("drag-over");
   var file = e.dataTransfer.files && e.dataTransfer.files[0];
@@ -276,6 +279,7 @@ var _wheelAccum = 0;
 var _wheelRaf = null;
 
 stage.addEventListener("wheel", function (e) {
+  if (currentMode !== "scrubber") return;
   if (state.duration === 0) return;
   e.preventDefault();
   stopPlayback();
@@ -296,6 +300,7 @@ var touchStartY = null;
 var touchStartTime = 0;
 
 stage.addEventListener("touchstart", function (e) {
+  if (currentMode !== "scrubber") return;
   if (state.duration === 0) return;
   stopPlayback();
   touchStartY = e.touches[0].clientY;
@@ -303,6 +308,7 @@ stage.addEventListener("touchstart", function (e) {
 }, { passive: true });
 
 stage.addEventListener("touchmove", function (e) {
+  if (currentMode !== "scrubber") return;
   if (state.duration === 0 || touchStartY === null) return;
   e.preventDefault();
   var deltaY = e.touches[0].clientY - touchStartY;
@@ -318,6 +324,7 @@ stage.addEventListener("touchend", function () {
 // ── Keyboard ──
 
 document.addEventListener("keydown", function (e) {
+  if (currentMode !== "scrubber") return;
   if (state.duration === 0) return;
   if (e.target.tagName === "INPUT") return;
 
@@ -576,3 +583,42 @@ window.addEventListener("beforeunload", function () {
     state.audioCtx.close();
   }
 });
+
+// ── Mode switching ──
+
+var currentMode = "scrubber";
+var stitcherActivated = false;
+
+var modeScrubBtn = document.getElementById("mode-scrub-btn");
+var modeStitchBtn = document.getElementById("mode-stitch-btn");
+var stageScrubber = document.getElementById("stage-scrubber");
+var stageStitcher = document.getElementById("stage-stitcher");
+
+function setMode(mode) {
+  if (mode === currentMode) return;
+  currentMode = mode;
+  if (mode === "stitcher") {
+    stopPlayback();
+    stageScrubber.hidden = true;
+    stageStitcher.hidden = false;
+    hud.style.display = "none";
+    modeScrubBtn.classList.remove("active");
+    modeStitchBtn.classList.add("active");
+    if (!stitcherActivated) {
+      stitcherActivated = true;
+      window.Stitcher.activate();
+    } else {
+      window.Stitcher.show();
+    }
+  } else {
+    stageStitcher.hidden = true;
+    stageScrubber.hidden = false;
+    if (state.duration > 0) hud.style.display = "flex";
+    modeStitchBtn.classList.remove("active");
+    modeScrubBtn.classList.add("active");
+    window.Stitcher.hide();
+  }
+}
+
+modeScrubBtn.addEventListener("click", function () { setMode("scrubber"); });
+modeStitchBtn.addEventListener("click", function () { setMode("stitcher"); });

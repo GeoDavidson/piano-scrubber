@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/stitcher.css">
 </head>
 <body>
 
@@ -56,15 +57,52 @@
       <label class="toolbar-label" for="accent-color">Color</label>
       <input type="color" id="accent-color" value="#FF6B00">
     </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-group">
+      <button id="mode-scrub-btn" class="t-btn t-btn-mode active">Scrub</button>
+      <button id="mode-stitch-btn" class="t-btn t-btn-mode">Stitch</button>
+    </div>
   </div>
 
   <div id="stage">
-    <div id="picker">
-      <label class="open-btn" for="video-file">Open Video</label>
-      <input type="file" id="video-file" accept="video/*" hidden>
-      <p id="picker-hint">Drop a video file or click to browse &middot; scrub with scroll wheel</p>
+    <div id="stage-scrubber" class="stage-mode">
+      <div id="picker">
+        <label class="open-btn" for="video-file">Open Video</label>
+        <input type="file" id="video-file" accept="video/*" hidden>
+        <p id="picker-hint">Drop a video file or click to browse &middot; scrub with scroll wheel</p>
+      </div>
+      <canvas id="frame-canvas"></canvas>
     </div>
-    <canvas id="frame-canvas"></canvas>
+    <div id="stage-stitcher" class="stage-mode" hidden>
+      <div id="stitch-stage">
+        <div id="stitch-picker">
+          <label class="open-btn" for="stitch-file">Open Video for Stitching</label>
+          <input type="file" id="stitch-file" accept="video/*" hidden>
+          <label class="open-btn stitch-load-btn" for="stitch-image-file">Load Saved Image</label>
+          <input type="file" id="stitch-image-file" accept="image/*" hidden>
+          <p id="stitch-hint">Drop a Synthesia-style tutorial video, or load a previously stitched PNG</p>
+          <button id="stitch-start-btn" class="t-btn t-btn-play" hidden>Stitch</button>
+        </div>
+        <div id="stitch-progress" hidden>
+          <div id="stitch-progress-label">Analyzing scroll rate&#x2026;</div>
+          <div id="stitch-progress-bar"><div id="stitch-progress-fill"></div></div>
+          <div id="stitch-progress-detail">Frame 0 / 0</div>
+          <button id="stitch-cancel-btn" class="t-btn t-btn-danger">Cancel</button>
+        </div>
+        <div id="stitch-viewer" hidden>
+          <div id="stitch-viewer-toolbar">
+            <button id="stitch-download-btn" class="t-btn">Download PNG</button>
+            <button id="stitch-restart-btn" class="t-btn">Stitch Another</button>
+          </div>
+          <div id="stitch-scroll">
+            <canvas id="stitch-canvas"></canvas>
+          </div>
+          <div id="keyboard-overlay"><!-- user fills in later --></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="hud">
@@ -81,8 +119,10 @@
   </div>
 
   <video id="video-source" style="display:none" preload="auto"></video>
+  <video id="stitch-video" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none" preload="auto"></video>
 
 <script src="/static/app.js"></script>
+<script src="/static/stitcher.js"></script>
 
 </body>
 </html>
