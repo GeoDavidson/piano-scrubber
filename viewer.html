@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Piano Roll Viewer</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Vertical scroll container — width set by JS to match roll.png */
+  #stage {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #000;
+    flex-shrink: 0;
+  }
+
+  /* Roll rendered at its natural pixel width — no stretching */
+  #roll {
+    display: block;
+  }
+
+  /* Keyboard sits fixed at the bottom, same width as the stage */
+  #keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  #keyboard img {
+    display: block;
+  }
+
+  #back {
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    z-index: 20;
+    color: rgba(255,255,255,.55);
+    text-decoration: none;
+    font-family: system-ui, sans-serif;
+    font-size: .82rem;
+    background: rgba(0,0,0,.55);
+    padding: .3em .75em;
+    border-radius: 6px;
+    transition: color .15s;
+  }
+  #back:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<a id="back" href="index.html">&#8592; Gallery</a>
+
+<div id="stage">
+  <img id="roll" src="" alt="Piano roll">
+</div>
+
+<div id="keyboard">
+  <img id="kb" src="" alt="Keyboard">
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const id     = params.get("id");
+
+  if (!id) {
+    document.body.innerHTML =
+      '<p style="color:#fff;padding:2rem;font-family:system-ui">No video id. ' +
+      '<a href="index.html" style="color:#6fa3e0">&#8592; Gallery</a></p>';
+  } else {
+    const stage   = document.getElementById("stage");
+    const keyboard= document.getElementById("keyboard");
+    const rollImg = document.getElementById("roll");
+    const kbImg   = document.getElementById("kb");
+
+    rollImg.src = `videos/${id}/roll.png`;
+    kbImg.src   = `videos/${id}/keyboard.png`;
+
+    // Once the roll loads, lock the container to its exact pixel width.
+    // Once the keyboard loads, size the fixed bar to the same width.
+    // Both images come from the same source at the same scale, so widths match.
+
+    rollImg.onload = () => {
+      const w = rollImg.naturalWidth;
+      stage.style.width    = w + "px";
+      keyboard.style.width = w + "px";
+      // Leave room for the keyboard bar (height known when kb loads, or fall back)
+      if (kbImg.naturalHeight) {
+        stage.style.paddingBottom = kbImg.naturalHeight + "px";
+      }
+      stage.scrollTop = stage.scrollHeight;
+    };
+
+    kbImg.onload = () => {
+      const h = kbImg.naturalHeight;
+      keyboard.style.height = h + "px";
+      stage.style.paddingBottom = h + "px";
+    };
+  }
+</script>
+</body>
+</html>

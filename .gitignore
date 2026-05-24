@@ -12,4 +12,4 @@ venv/
 env/
 
 # Claude
-.claude/settings.local.json
+.claude/
