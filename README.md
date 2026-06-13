@@ -66,9 +66,3 @@ videos/
     thumb.jpg           ← gallery thumbnail
     meta.json           ← title, URL, settings used
 ```
-
-## Legacy files
-
-The old `main.py`, `video.mp4`, `out.png`, and `keyboard.png` at the project
-root are superseded. Once you verify the new pipeline produces a working video,
-delete them by hand.
