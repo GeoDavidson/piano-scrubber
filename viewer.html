@@ -9,6 +9,7 @@
     height: 100%;
     background: #000;
     overflow: hidden;
+    user-select: none;
   }
 
   body {
@@ -16,7 +17,6 @@
     justify-content: center;
   }
 
-  /* Vertical scroll container — width set by JS to match roll.png */
   #stage {
     height: 100vh;
     overflow-y: auto;
@@ -25,30 +25,197 @@
     flex-shrink: 0;
   }
 
-  /* Roll rendered at its natural pixel width — no stretching */
-  #roll {
-    display: block;
+  #roll-wrap {
+    position: relative;
+    line-height: 0;
   }
 
-  /* Keyboard sits fixed at the bottom, same width as the stage */
+  #roll { display: block; }
+
+  /* ── Sections ─────────────────────────────────────────────────────────── */
+
+  #sections-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .sec-band {
+    position: absolute;
+    left: 0; right: 0;
+    pointer-events: none;
+  }
+
+  .sec-break {
+    position: absolute;
+    left: 0; right: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .sec-break::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: rgba(255,255,255,0.2);
+  }
+
+  .sec-break .del-btn {
+    position: absolute;
+    right: 10px; top: 0;
+    transform: translateY(-50%);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(20,20,20,0.75);
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: auto;
+    touch-action: manipulation;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .sec-break .del-btn:active {
+    background: rgba(60,20,20,0.9);
+    color: rgba(255,100,100,0.9);
+  }
+
+  .press-ring {
+    position: absolute;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.45);
+    pointer-events: none;
+    z-index: 5;
+    animation: ring-pulse 0.55s ease-out forwards;
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  @keyframes ring-pulse {
+    0%   { transform: translate(-50%,-50%) scale(0);   opacity: 1; }
+    100% { transform: translate(-50%,-50%) scale(1.4); opacity: 0; }
+  }
+
+  /* ── Fingerings ───────────────────────────────────────────────────────── */
+
+  #fingerings-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .fing-dot {
+    position: absolute;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.75);
+    border: 1.5px solid rgba(255,255,255,0.28);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: system-ui, sans-serif;
+    letter-spacing: -0.4px;
+    display: flex; align-items: center; justify-content: center;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: default;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .fing-dot.active {
+    border-color: rgba(255,255,255,0.75);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+  }
+
+  .fing-dot.dragging {
+    transform: translate(-50%, -50%) scale(1.25);
+    border-color: rgba(255,255,255,0.8);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    transition: none;
+  }
+
+  /* Toggle button — shares style with #back */
+  #fing-toggle {
+    position: fixed;
+    top: 12px;
+    left: 110px;
+    z-index: 20;
+    color: rgba(255,255,255,.55);
+    background: rgba(0,0,0,.55);
+    border: none;
+    font-family: system-ui, sans-serif;
+    font-size: .82rem;
+    padding: .3em .75em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  #fing-toggle:hover { color: #fff; }
+  #fing-toggle.active {
+    background: rgba(111,163,224,0.22);
+    color: #6fa3e0;
+  }
+
+  /* Fingering popup */
+  #fing-popup {
+    position: fixed;
+    display: none;
+    align-items: center;
+    gap: 2px;
+    background: rgba(12,12,12,0.92);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 9px;
+    padding: 5px 6px;
+    z-index: 30;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .fp-arrow {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+  .fp-arrow:active { background: rgba(255,255,255,0.1); }
+
+  #fp-label {
+    min-width: 28px;
+    text-align: center;
+    font-family: system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+  #fp-label:active { background: rgba(255,255,255,0.1); }
+
+  /* ── Fixed overlays ───────────────────────────────────────────────────── */
+
   #keyboard {
     position: fixed;
-    bottom: 0;
-    left: 50%;
+    bottom: 0; left: 50%;
     transform: translateX(-50%);
     background: #000;
     z-index: 10;
     overflow: hidden;
   }
-
-  #keyboard img {
-    display: block;
-  }
+  #keyboard img { display: block; }
 
   #back {
     position: fixed;
-    top: 12px;
-    left: 14px;
+    top: 12px; left: 14px;
     z-index: 20;
     color: rgba(255,255,255,.55);
     text-decoration: none;
@@ -65,9 +232,20 @@
 <body>
 
 <a id="back" href="index.html">&#8592; Gallery</a>
+<button id="fing-toggle">Fingerings</button>
+
+<div id="fing-popup">
+  <button class="fp-arrow" id="fp-left">&#9664;</button>
+  <div id="fp-label">L1</div>
+  <button class="fp-arrow" id="fp-right">&#9654;</button>
+</div>
 
 <div id="stage">
-  <img id="roll" src="" alt="Piano roll">
+  <div id="roll-wrap">
+    <img id="roll" src="" alt="Piano roll">
+    <div id="sections-layer"></div>
+    <div id="fingerings-layer"></div>
+  </div>
 </div>
 
 <div id="keyboard">
@@ -83,34 +261,330 @@
       '<p style="color:#fff;padding:2rem;font-family:system-ui">No video id. ' +
       '<a href="index.html" style="color:#6fa3e0">&#8592; Gallery</a></p>';
   } else {
-    const stage   = document.getElementById("stage");
-    const keyboard= document.getElementById("keyboard");
-    const rollImg = document.getElementById("roll");
-    const kbImg   = document.getElementById("kb");
+    const stage      = document.getElementById("stage");
+    const keyboard   = document.getElementById("keyboard");
+    const rollWrap   = document.getElementById("roll-wrap");
+    const rollImg    = document.getElementById("roll");
+    const kbImg      = document.getElementById("kb");
+    const secLayer   = document.getElementById("sections-layer");
+    const fingLayer  = document.getElementById("fingerings-layer");
+    const fingToggle = document.getElementById("fing-toggle");
+    const popup      = document.getElementById("fing-popup");
+    const fpLabel    = document.getElementById("fp-label");
 
-    rollImg.src = `videos/${id}/roll.png`;
-    kbImg.src   = `videos/${id}/keyboard.png`;
+    // ── Sections ────────────────────────────────────────────────────────────
 
-    // Once the roll loads, lock the container to its exact pixel width.
-    // Once the keyboard loads, size the fixed bar to the same width.
-    // Both images come from the same source at the same scale, so widths match.
+    const SEC_COLORS = [
+      "rgba(255,220,50,0.13)",
+      "rgba(255,80,80,0.13)",
+      "rgba(80,140,255,0.13)",
+      "rgba(255,120,180,0.13)",
+      "rgba(80,200,100,0.13)",
+      "rgba(180,80,255,0.13)",
+    ];
+
+    const SEC_KEY  = "piano-sections-" + id;
+    let rollW = 0, rollH = 0;
+    let breaks = [];
+
+    function loadBreaks() {
+      try { breaks = JSON.parse(localStorage.getItem(SEC_KEY) || "[]"); }
+      catch { breaks = []; }
+    }
+
+    function saveBreaks() { localStorage.setItem(SEC_KEY, JSON.stringify(breaks)); }
+
+    function renderSections() {
+      secLayer.innerHTML = "";
+      if (rollH === 0 || breaks.length === 0) return;
+
+      const pts = [0, ...breaks, 1];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const t = pts[i] * rollH, h = (pts[i+1] - pts[i]) * rollH;
+        const band = document.createElement("div");
+        band.className = "sec-band";
+        band.style.cssText = "top:" + t + "px;height:" + h + "px;background:" + SEC_COLORS[i % SEC_COLORS.length];
+        secLayer.appendChild(band);
+      }
+
+      breaks.forEach((frac, idx) => {
+        const line = document.createElement("div");
+        line.className = "sec-break";
+        line.style.top = (frac * rollH) + "px";
+        const btn = document.createElement("div");
+        btn.className = "del-btn";
+        btn.textContent = "✕";
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          breaks.splice(idx, 1);
+          saveBreaks();
+          renderSections();
+        });
+        line.appendChild(btn);
+        secLayer.appendChild(line);
+      });
+    }
+
+    // ── Fingerings ───────────────────────────────────────────────────────────
+
+    const FING_KEY = "piano-fingerings-" + id;
+    let fingerings = [];     // [{x, y, hand, finger}] — x/y as fractions
+    let activeFingIdx = -1;
+    let fingVisible = true;
+
+    function loadFingerings() {
+      try { fingerings = JSON.parse(localStorage.getItem(FING_KEY) || "[]"); }
+      catch { fingerings = []; }
+    }
+
+    function saveFingerings() { localStorage.setItem(FING_KEY, JSON.stringify(fingerings)); }
+
+    function renderFingerings() {
+      fingLayer.innerHTML = "";
+      if (rollW === 0) return;
+      fingerings.forEach((f, idx) => {
+        const dot = document.createElement("div");
+        dot.className = "fing-dot" + (idx === activeFingIdx ? " active" : "");
+        dot.dataset.idx = idx;
+        dot.textContent = f.hand + f.finger;
+        dot.style.left = (f.x * rollW) + "px";
+        dot.style.top  = (f.y * rollH) + "px";
+        fingLayer.appendChild(dot);
+      });
+    }
+
+    function updatePopupLabel() {
+      if (activeFingIdx < 0) return;
+      const f = fingerings[activeFingIdx];
+      fpLabel.textContent = f.hand + f.finger;
+    }
+
+    function showPopup(idx, clientX, clientY) {
+      activeFingIdx = idx;
+      renderFingerings();
+      updatePopupLabel();
+      popup.style.display = "flex";
+      // Measure then position
+      const pw = popup.offsetWidth, ph = popup.offsetHeight;
+      let px = clientX - pw / 2;
+      let py = clientY - ph - 14;
+      if (py < 4) py = clientY + 18;
+      px = Math.max(4, Math.min(px, window.innerWidth - pw - 4));
+      popup.style.left = px + "px";
+      popup.style.top  = py + "px";
+    }
+
+    function closePopup() {
+      popup.style.display = "none";
+      if (activeFingIdx >= 0) { activeFingIdx = -1; renderFingerings(); }
+    }
+
+    // Popup controls
+    document.getElementById("fp-left").addEventListener("click", () => {
+      if (activeFingIdx < 0) return;
+      fingerings[activeFingIdx].finger = Math.max(1, fingerings[activeFingIdx].finger - 1);
+      saveFingerings(); renderFingerings(); updatePopupLabel();
+    });
+    document.getElementById("fp-right").addEventListener("click", () => {
+      if (activeFingIdx < 0) return;
+      fingerings[activeFingIdx].finger = Math.min(5, fingerings[activeFingIdx].finger + 1);
+      saveFingerings(); renderFingerings(); updatePopupLabel();
+    });
+    fpLabel.addEventListener("click", () => {
+      if (activeFingIdx < 0) return;
+      const f = fingerings[activeFingIdx];
+      f.hand = f.hand === "L" ? "R" : "L";
+      saveFingerings(); renderFingerings(); updatePopupLabel();
+    });
+
+    // Toggle button — show/hide dots only, interactions always work
+    fingToggle.addEventListener("click", () => {
+      fingVisible = !fingVisible;
+      fingLayer.style.visibility = fingVisible ? "" : "hidden";
+      fingToggle.classList.toggle("active", !fingVisible);
+      if (!fingVisible) closePopup();
+    });
+
+    // Close popup when scrolling or tapping outside
+    stage.addEventListener("scroll", closePopup, { passive: true });
+    document.addEventListener("pointerdown", e => {
+      if (activeFingIdx >= 0 && !e.target.closest("#fing-popup")) closePopup();
+    });
+
+    // ── Image load ───────────────────────────────────────────────────────────
+
+    rollImg.src = "videos/" + id + "/roll.png";
+    kbImg.src   = "videos/" + id + "/keyboard.png";
 
     rollImg.onload = () => {
-      const w = rollImg.naturalWidth;
-      stage.style.width    = w + "px";
-      keyboard.style.width = w + "px";
-      // Leave room for the keyboard bar (height known when kb loads, or fall back)
-      if (kbImg.naturalHeight) {
-        stage.style.paddingBottom = kbImg.naturalHeight + "px";
-      }
+      rollW = rollImg.naturalWidth;
+      rollH = rollImg.naturalHeight;
+      rollWrap.style.width  = rollW + "px";
+      rollWrap.style.height = rollH + "px";
+      stage.style.width     = rollW + "px";
+      keyboard.style.width  = rollW + "px";
+      if (kbImg.naturalHeight) stage.style.paddingBottom = kbImg.naturalHeight + "px";
       stage.scrollTop = stage.scrollHeight;
+      loadBreaks();      renderSections();
+      loadFingerings();  renderFingerings();
     };
 
     kbImg.onload = () => {
       const h = kbImg.naturalHeight;
-      keyboard.style.height = h + "px";
+      keyboard.style.height     = h + "px";
       stage.style.paddingBottom = h + "px";
     };
+
+    // ── Unified press handling ───────────────────────────────────────────────
+
+    const LONG_MS   = 600;
+    const MOVE_SLOP = 8;
+
+    let pressTimer    = null;
+    let pressOrigin   = null;
+    let pressMovedFar = false;
+    let pressRollX    = 0;
+    let pressRollY    = 0;
+    let pressDotIdx   = -1;
+    let isDraggingDot = false;
+
+    function cancelPress() {
+      clearTimeout(pressTimer);
+      pressTimer = null; pressOrigin = null;
+      pressMovedFar = false; pressDotIdx = -1;
+      isDraggingDot = false;
+    }
+
+    function placeBreak(rollY, clientX, clientY) {
+      const frac = Math.max(0.005, Math.min(0.995, rollY / rollH));
+      if (breaks.some(b => Math.abs(b - frac) < 0.01)) return;
+      breaks.push(frac);
+      breaks.sort((a, b) => a - b);
+      saveBreaks();
+      renderSections();
+
+      const stageRect = stage.getBoundingClientRect();
+      const ring = document.createElement("div");
+      ring.className = "press-ring";
+      ring.style.left = (clientX - stageRect.left) + "px";
+      ring.style.top  = rollY + "px";
+      secLayer.appendChild(ring);
+      ring.addEventListener("animationend", () => ring.remove());
+    }
+
+    rollWrap.addEventListener("pointerdown", e => {
+      if (e.target.closest(".del-btn")) return;
+      if (e.button !== 0) return;
+
+      const stageRect = stage.getBoundingClientRect();
+      pressOrigin   = { x: e.clientX, y: e.clientY };
+      pressMovedFar = false;
+      pressRollX    = e.clientX - stageRect.left;
+      pressRollY    = stage.scrollTop + e.clientY - stageRect.top;
+
+      const dotEl = e.target.closest(".fing-dot");
+      pressDotIdx = dotEl ? parseInt(dotEl.dataset.idx) : -1;
+      rollWrap.setPointerCapture(e.pointerId);
+
+      if (pressDotIdx >= 0) {
+        // Long-press on a dot deletes it; short tap shows popup
+        pressTimer = setTimeout(() => {
+          if (pressMovedFar) return;
+          fingerings.splice(pressDotIdx, 1);
+          saveFingerings();
+          closePopup();
+          renderFingerings();
+          cancelPress();
+        }, LONG_MS);
+      } else {
+        // Long-press on empty area places a section break
+        pressTimer = setTimeout(() => {
+          if (!pressOrigin || pressMovedFar) return;
+          placeBreak(pressRollY, pressOrigin.x, pressOrigin.y);
+          cancelPress();
+        }, LONG_MS);
+      }
+    });
+
+    rollWrap.addEventListener("pointermove", e => {
+      if (!pressOrigin) return;
+      const dx = e.clientX - pressOrigin.x, dy = e.clientY - pressOrigin.y;
+
+      if (pressDotIdx >= 0 && !isDraggingDot && dx*dx + dy*dy > MOVE_SLOP * MOVE_SLOP) {
+        // Crossed slop threshold while on a dot — start drag
+        isDraggingDot = true;
+        pressMovedFar = true;
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        closePopup();
+        const dotEl = fingLayer.querySelector('[data-idx="' + pressDotIdx + '"]');
+        if (dotEl) dotEl.classList.add("dragging");
+      }
+
+      if (isDraggingDot) {
+        e.preventDefault();
+        const stageRect = stage.getBoundingClientRect();
+        const fx = Math.max(0, Math.min(1, (e.clientX - stageRect.left) / rollW));
+        const fy = Math.max(0, Math.min(1, (stage.scrollTop + e.clientY - stageRect.top) / rollH));
+        fingerings[pressDotIdx].x = fx;
+        fingerings[pressDotIdx].y = fy;
+        const dotEl = fingLayer.querySelector('[data-idx="' + pressDotIdx + '"]');
+        if (dotEl) { dotEl.style.left = (fx * rollW) + "px"; dotEl.style.top = (fy * rollH) + "px"; }
+        return;
+      }
+
+      if (dx*dx + dy*dy > MOVE_SLOP * MOVE_SLOP) {
+        pressMovedFar = true;
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    });
+
+    rollWrap.addEventListener("pointerup", e => {
+      if (isDraggingDot) {
+        saveFingerings();
+        cancelPress();
+        renderFingerings();
+        return;
+      }
+      if (!pressOrigin || pressMovedFar) { cancelPress(); return; }
+      clearTimeout(pressTimer);
+
+      if (pressDotIdx >= 0) {
+        // Tap on existing dot → show popup
+        showPopup(pressDotIdx, e.clientX, e.clientY);
+      } else {
+        // Tap on empty → add new fingering (default L1)
+        const fx = Math.max(0, Math.min(1, pressRollX / rollW));
+        const fy = Math.max(0, Math.min(1, pressRollY / rollH));
+        fingerings.push({ x: fx, y: fy, hand: "L", finger: 1 });
+        saveFingerings();
+        const newIdx = fingerings.length - 1;
+        // Make dots visible if they were hidden
+        if (!fingVisible) {
+          fingVisible = true;
+          fingLayer.style.visibility = "";
+          fingToggle.classList.remove("active");
+        }
+        renderFingerings();
+        showPopup(newIdx, e.clientX, e.clientY);
+      }
+
+      cancelPress();
+    });
+
+    rollWrap.addEventListener("pointercancel", () => {
+      if (isDraggingDot) { saveFingerings(); cancelPress(); renderFingerings(); }
+      else { cancelPress(); }
+    });
+
+    // Prevent the browser claiming a dot-touch as a scroll gesture.
+    // Must be non-passive so preventDefault() is allowed.
+    rollWrap.addEventListener("touchstart", e => {
+      if (e.target.closest(".fing-dot")) e.preventDefault();
+    }, { passive: false });
+
+    rollWrap.addEventListener("contextmenu", e => e.preventDefault());
   }
 </script>
 </body>

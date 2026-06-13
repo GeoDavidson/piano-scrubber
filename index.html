@@ -14,7 +14,7 @@
     --accent: #6fa3e0;
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
   body {
     background: var(--bg);
@@ -51,12 +51,45 @@
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0,0,0,.5);
   }
+  .card .thumb-wrap {
+    position: relative;
+  }
+
   .card .thumb {
     width: 100%;
     aspect-ratio: 16 / 9;
     object-fit: cover;
     display: block;
     background: #000;
+  }
+
+  .card .del-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0);
+    color: transparent;
+    font-size: 2.8rem;
+    font-weight: 200;
+    transition: background .35s, color .35s;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .card.del-ready .del-overlay {
+    background: rgba(0,0,0,.5);
+    color: rgba(111,163,224,.7);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .card.removing {
+    opacity: 0;
+    transform: scale(.95);
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
   }
   .card .info {
     padding: .75rem 1rem .9rem;
@@ -104,7 +137,8 @@
   const grid  = document.getElementById("grid");
   const empty = document.getElementById("empty");
 
-  const library = (typeof LIBRARY !== "undefined") ? LIBRARY : [];
+  const removed = new Set(JSON.parse(localStorage.getItem("piano-removed") || "[]"));
+  const library = ((typeof LIBRARY !== "undefined") ? LIBRARY : []).filter(v => !removed.has(v.id));
 
   if (library.length === 0) {
     empty.style.display = "block";
@@ -114,19 +148,48 @@
       a.className = "card";
       a.href = `viewer.html?id=${encodeURIComponent(v.id)}`;
 
+      const wrap = document.createElement("div");
+      wrap.className = "thumb-wrap";
+
       const img = document.createElement("img");
       img.className = "thumb";
       img.src = `videos/${v.id}/thumb.jpg`;
       img.alt = v.title;
       img.onerror = () => { img.style.background = "#000"; img.removeAttribute("src"); };
 
+      const overlay = document.createElement("div");
+      overlay.className = "del-overlay";
+      overlay.textContent = "✕";
+
+      wrap.appendChild(img);
+      wrap.appendChild(overlay);
+
       const info = document.createElement("div");
       info.className = "info";
       info.innerHTML = `<h2>${v.title.replace(/</g, "&lt;")}</h2>`;
 
-      a.appendChild(img);
+      a.appendChild(wrap);
       a.appendChild(info);
       grid.appendChild(a);
+
+      let hoverTimer = null;
+      a.addEventListener("mouseenter", () => {
+        hoverTimer = setTimeout(() => a.classList.add("del-ready"), 2000);
+      });
+      a.addEventListener("mouseleave", () => {
+        clearTimeout(hoverTimer);
+        a.classList.remove("del-ready");
+      });
+
+      overlay.addEventListener("click", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const gone = new Set(JSON.parse(localStorage.getItem("piano-removed") || "[]"));
+        gone.add(v.id);
+        localStorage.setItem("piano-removed", JSON.stringify([...gone]));
+        a.classList.add("removing");
+        a.addEventListener("transitionend", () => a.remove(), { once: true });
+      });
     });
   }
 </script>
